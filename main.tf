@@ -1,7 +1,8 @@
+#AWS  Provider
 provider "aws" {
   region = "us-west-1"
 }
-
+#create vpc
 resource "aws_vpc" "vpc" {
   cidr_block       = "192.168.0.0/16"
   instance_tenancy = "default"
@@ -11,11 +12,14 @@ resource "aws_vpc" "vpc" {
     Name = "vpc-demo"
   }
 }
+# to display output
 data "aws_caller_identity" "current" {}
 
 output "aws_caller_info" {
     value = data.aws_caller_identity.current
 }
+
+#to create Public Subnet
 resource "aws_subnet" "pub" {
   vpc_id     = aws_vpc.vpc.id
   cidr_block = "192.168.1.0/24"
@@ -23,6 +27,7 @@ resource "aws_subnet" "pub" {
     Name = "public"
   }
 }
+#to create Private Subnet
 resource "aws_subnet" "pri" {
   vpc_id     = aws_vpc.vpc.id
   cidr_block = "192.168.3.0/24"
@@ -30,6 +35,7 @@ resource "aws_subnet" "pri" {
     Name = "private"
   }
 }
+#To create Inernet Gateway
 resource "aws_internet_gateway" "igw" {
   vpc_id = aws_vpc.vpc.id
 
@@ -37,9 +43,12 @@ resource "aws_internet_gateway" "igw" {
     Name = "IGW"
   }
 }
+# to create Elastic Ip for craeting NAT gateway
 resource "aws_eip" "IP" {
   vpc      = true
 }
+
+#To create NAT Gateway
 resource "aws_nat_gateway" "ngw" {
   allocation_id = aws_eip.IP.id
   subnet_id     = aws_subnet.pri.id
@@ -48,6 +57,7 @@ resource "aws_nat_gateway" "ngw" {
     Name = "NGW"
   }
 }
+#To create Route Table for Internetgateway
 resource "aws_route_table" "rt1" {
   vpc_id = aws_vpc.vpc.id
 
@@ -59,6 +69,7 @@ resource "aws_route_table" "rt1" {
     Name = "custom"
   }
 }
+##To create Route Table for NAT gateway
   resource "aws_route_table" "rt2" {
   vpc_id = aws_vpc.vpc.id
 
@@ -70,6 +81,8 @@ resource "aws_route_table" "rt1" {
     Name = "main"
   }
 }
+
+# subnet association with route tables
   resource "aws_route_table_association" "as_1" {
   subnet_id      = aws_subnet.pub.id
   route_table_id = aws_route_table.rt1.id
@@ -78,6 +91,7 @@ resource "aws_route_table_association" "as_2" {
   subnet_id      = aws_subnet.pri.id
   route_table_id = aws_route_table.rt2.id
 }
+#to Create Security Group
   resource "aws_security_group" "sg" {
   name        = "first-sg"
   description = "Allow TLS inbound traffic"
